@@ -1,58 +1,86 @@
-# Evidências visuais — apoio para a Pessoa 4
+# Evidências visuais (Pessoa 4)
 
-Esta pasta existe só para gerar e guardar **evidências de execução** (terminal em
-vermelho/verde, cobertura) para o vídeo e os slides. Nada aqui entra no build do projeto: o
-nome `_evidence` começa com `_`, e o Go ignora por convenção qualquer diretório com esse
-prefixo em `go build ./...` / `go test ./...`. Ou seja, pode rodar `go test .` diretamente
-dentro das subpastas abaixo sem medo de "contaminar" a suíte principal.
+Esta pasta guarda as **evidências de execução** dos testes (terminal em vermelho/verde e
+cobertura) para o vídeo e os slides. Nada aqui entra no build: o Go ignora por convenção
+qualquer diretório que começa com `_`, então dá pra rodar `go test .` dentro das subpastas
+sem afetar a suíte principal.
 
 ## O que tem aqui
 
 | Arquivo/pasta | Para quê |
 |---|---|
-| `record-demo.ps1` | Roteiro de gravação passo a passo (PowerShell), com pausas para narrar |
-| `few_shot_original/` | Código do Few-shot **exatamente como o ChatGPT gerou** — não compila (RED #1: typo `*testing.t`) |
-| `few_shot_typo_fixed_only/` | Mesmo código, só com o typo corrigido — ainda não compila (RED #2: struct inventada) |
-| `coverage.out` / `coverage.html` / `coverage_summary.txt` | Cobertura gerada a partir de `prompt_tests/...` |
+| `assets/Imagens/` | Os prints da execução dos testes (vermelho, verde e cobertura), prontos para os slides e o vídeo |
+| `few_shot_original/` | Código do Few-shot como o ChatGPT gerou. Não compila (RED 1: typo `*testing.t`) |
+| `few_shot_typo_fixed_only/` | Mesmo código só com o typo corrigido. Ainda não compila (RED 2: struct que não existe) |
+| `coverage.out`, `coverage.html`, `coverage_summary.txt` | Cobertura gerada a partir de `prompt_tests/...` |
 
-## Roteiro sugerido para o vídeo (vermelho → verde)
+## Evidências capturadas
 
-Rodar `./record-demo.ps1` de dentro desta pasta faz exatamente esta sequência, com pausa
-entre cada passo:
+Rodado no macOS com `go1.25.5` e `gotestsum`, usando `-count=1` para não pegar cache. Os
+prints estão em `assets/Imagens/`.
 
-1. **Mostrar o código legado** (`gildedrose/gildedrose.go`) — a lógica condicional confusa que
-   está sendo testada.
-2. **RED #1** — entrar em `_evidence/few_shot_original` e rodar `go test .`: reproduz o erro de
-   compilação real que o ChatGPT cometeu na técnica Few-shot (`*testing.t` em vez de
-   `*testing.T`). Dá pra dar zoom na mensagem de erro do compilador.
-3. **RED #2** — entrar em `_evidence/few_shot_typo_fixed_only` e rodar `go test .`: mesmo
-   corrigindo só o typo, ainda falha com `undefined: GildedRose` — mostra que a IA usou a
-   struct do exemplo do prompt em vez da função real do código fornecido
-   (`UpdateQuality(items []*Item)`).
-4. **GREEN** — rodar a suíte Few-shot já corrigida e integrada
-   (`prompt_tests/few_shot`), mostrando que as asserções da IA estavam corretas o tempo todo;
-   o problema era só estrutural.
-5. **GREEN (tudo)** — rodar as 5 técnicas juntas (`prompt_tests/...`), 100% passando.
-6. **Cobertura** — abrir `coverage.html` no navegador (gerado no passo 5 do script): mostra o
-   `gildedrose.go` com as linhas cobertas em verde.
+### 1. Código legado (`gildedrose.go`)
 
-Ver [`../LOG-CORRECOES.md`](../LOG-CORRECOES.md) para o texto de apoio a essa narrativa,
-incluindo o achado de que **até o prompt Direto (baseline) chega a 100% de cobertura de
-statement**, mesmo sendo a suíte mais superficial — bom gancho para explicar, na cobertura em
-verde do passo 6, que "100% coberto" não é o mesmo que "bem testado".
+O `UpdateQuality` que a IA teve que testar. É só o contexto, não tem verde nem vermelho aqui.
 
-## Comandos manuais (se preferir não usar o script)
+![Passo 1, código legado](assets/Imagens/Teste1.png)
+
+### 2. RED 1: Few-shot como o ChatGPT gerou
+
+Não compila, então nenhum teste roda. Aparece `FAIL` e `wrong signature ... must be: func
+...(t *testing.T)`, porque a IA escreveu `*testing.t` minúsculo.
+
+![Passo 2, erro de compilação](assets/Imagens/Teste2.png)
+
+### 3. RED 2: mesmo corrigindo o typo, ainda não compila
+
+Aparece `FAIL` e vários `undefined: GildedRose`. A IA usou uma struct do exemplo do prompt
+que não existe no código real. A assinatura real é `UpdateQuality(items []*Item)`.
+
+![Passo 3, struct que não existe](assets/Imagens/Teste3.png)
+
+### 4. GREEN: Few-shot corrigido e integrado
+
+Foram só duas correções estruturais. As asserções da IA já estavam certas. 24 testes passam.
+
+![Passo 4, Few-shot passando](assets/Imagens/Teste4.png)
+
+### 5. GREEN: as 5 técnicas de prompt juntas
+
+`DONE 131 tests`, nenhum `FAIL`.
+
+![Passo 5, todas as técnicas parte 1](assets/Imagens/Teste5_1.png)
+![Passo 5, todas as técnicas parte 2](assets/Imagens/Teste5_2.png)
+
+### 6. Cobertura de statement: 100% nas 5 técnicas
+
+Inclusive o prompt Direto, que é o mais simples.
+
+![Passo 6, cobertura no terminal](assets/Imagens/Teste6_1.png)
+
+### 7. Relatório visual de cobertura (`coverage.html`)
+
+O `gildedrose.go` com todas as linhas verdes (cobertas) e o topo indicando 100%.
+
+![Passo 7, página coverage.html](assets/Imagens/Teste6_2_Pagina.png)
+
+Ponto para o Veredito: até a suíte mais simples (prompt Direto) chega a 100% de cobertura de
+statement. O `go tool cover` não mede se os valores de fronteira certos foram testados, então
+100% coberto não quer dizer bem testado. O detalhe está em
+[`../LOG-CORRECOES.md`](../LOG-CORRECOES.md).
+
+## Como reproduzir os prints
 
 ```powershell
-# RED #1
+# RED 1
 cd _evidence/few_shot_original
 go test .
 
-# RED #2
+# RED 2
 cd ../few_shot_typo_fixed_only
 go test .
 
-# GREEN — saída colorida por teste (requer gotestsum)
+# GREEN com saída colorida por teste (requer gotestsum)
 go install gotest.tools/gotestsum@latest
 cd ../..
 gotestsum --format testname -- ./prompt_tests/...
@@ -61,12 +89,3 @@ gotestsum --format testname -- ./prompt_tests/...
 go test ./prompt_tests/... -coverpkg=./gildedrose/... -coverprofile=_evidence/coverage.out
 go tool cover -html=_evidence/coverage.out -o _evidence/coverage.html
 ```
-
-## Dicas de gravação
-
-- Aumentar a fonte do terminal antes de gravar (facilita o "zoom" pedido no enunciado).
-- Terminais que colorem bem PASS/FAIL: Windows Terminal ou VS Code integrated terminal.
-  `gotestsum` detecta automaticamente e usa verde/vermelho quando o terminal suporta.
-  Sem `gotestsum`, `go test -v` funciona mas não colore, só escreve `PASS`/`FAIL` em texto.
-- Gravador de tela nativo do Windows: `Win + Alt + R` (Xbox Game Bar) grava só a janela
-  ativa — útil para não vazar outras informações da tela.
