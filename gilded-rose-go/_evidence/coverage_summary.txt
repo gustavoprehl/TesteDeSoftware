@@ -1,0 +1,2 @@
+github.com/emilybache/gildedrose-refactoring-kata/gildedrose/gildedrose.go:8:	UpdateQuality	100.0%
+total:										(statements)	100.0%
