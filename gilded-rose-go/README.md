@@ -55,3 +55,16 @@ Resultado atual: as 5 suítes compilam e passam 100%, com 100% de cobertura de s
 pacote `gildedrose`. Ver [`../LOG-CORRECOES.md`](../LOG-CORRECOES.md) para as correções manuais
 que foram necessárias (responsabilidade da Dupla 2) e para uma observação sobre o que essa
 cobertura de 100% não garante — material de apoio para a auditoria da Dupla 3.
+
+## Auditoria manual (Dupla 3)
+
+A auditoria crítica e a lista de lacunas estão em
+[`AUDITORIA-TESTES-IA.md`](AUDITORIA-TESTES-IA.md). Os testes manuais de `Conjured`,
+que expõem uma regra ausente na implementação e nas cinco suítes da IA, podem ser executados com:
+
+```shell
+go test ./manual_tests -v
+```
+
+Esses testes falham intencionalmente no estado atual do código, servindo como evidência visual da
+lacuna encontrada.
