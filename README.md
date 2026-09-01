@@ -11,6 +11,8 @@ Trabalho da disciplina de Teste de Software (PUC).
 
 - [`gilded-rose-go/`](gilded-rose-go/) — código do kata em Go (obtido via sparse-checkout do
   repositório oficial, pasta `go/`), com os testes gerados pela IA integrados.
+- [`gilded-rose-go/_evidence/assets/Imagens/`](gilded-rose-go/_evidence/assets/Imagens/): prints
+  da suíte rodando (vermelho, verde e cobertura) para os slides e o vídeo.
 - [`Registro_Prompts.pdf`](Registro_Prompts.pdf) — prompts utilizados com o ChatGPT (Direto,
   Chain-of-Thought, Persona Pattern, Few-shot, Spec-driven), links das conversas e análise
   comparativa das técnicas.
