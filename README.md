@@ -92,5 +92,5 @@ Resumo:
 ## Entregáveis
 
 - Slides + relatório consolidado: [`docs/AI_Quality_Gilded_Rose.pdf`](docs/AI_Quality_Gilded_Rose.pdf) / [`.pptx`](docs/AI_Quality_Gilded_Rose.pptx)
-- Vídeo-demonstração: _link a adicionar_
+- [`Vídeo-demonstração`]([docs/AI_Quality_Gilded_Rose.pdf](https://drive.google.com/file/d/1MBs7JPvyEo5RFLzwKYxWZbS09PH1rDXj/view?usp=sharing))
 - Log de Crítica individual: entregue em sala, fora deste repositório
