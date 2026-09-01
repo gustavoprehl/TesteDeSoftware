@@ -124,3 +124,43 @@ As cinco suítes geradas pela IA devem continuar verdes.
 Manter os testes manuais vermelhos como evidência da auditoria até que a equipe
 decida implementar a regra `Conjured`. Depois da correção do código de produção,
 esses mesmos testes devem permanecer como regressão e passar sem alteração.
+
+## Intervenção manual na integração (Dupla 2)
+
+Além das lacunas de regra de negócio acima, a integração das 5 suítes ao
+projeto exigiu duas correções mecânicas de compilação — nenhuma delas mudou
+qualquer asserção ou valor esperado gerado pela IA:
+
+1. **Few-shot não compilava.** A suíte usava `*testing.t` (minúsculo) em vez de
+   `*testing.T` — erro de sintaxe puro. Corrigido isoladamente, a compilação
+   ainda falhava com `undefined: GildedRose`: a IA havia copiado a struct do
+   exemplo do prompt (`gr := GildedRose{Items: items}; gr.UpdateQuality()`) em
+   vez da assinatura real do código fornecido (`UpdateQuality(items []*Item)`).
+   As chamadas foram trocadas por `gildedrose.UpdateQuality(items)`. Depois
+   dessas duas correções, os 20 testes do Few-shot passaram sem qualquer outra
+   mudança — a lógica dos testes em si já estava correta.
+2. **Colisão de nomes entre técnicas.** Few-shot e Spec-driven geraram funções
+   de teste com nomes idênticos (`TestQualityDecreasesByOneForNormalItemBeforeSellDate`
+   e `TestQualityDecreasesByTwoForNormalItemAfterSellDate`). Cada técnica foi
+   isolada em seu próprio pacote Go sob `prompt_tests/<tecnica>/` para evitar o
+   conflito.
+
+A reprodução ao vivo do erro original do Few-shot (antes de qualquer correção)
+está preservada em [`_evidence/few_shot_original/`](_evidence/few_shot_original/)
+e [`_evidence/few_shot_typo_fixed_only/`](_evidence/few_shot_typo_fixed_only/) —
+ambos ficam fora do build normal (prefixo `_`) e só compilam se você entrar
+neles de propósito com `go test .`.
+
+## Cobertura de statement como falso positivo (reforço)
+
+O ponto já levantado sobre `Conjured` tem uma versão ainda mais direta: **até o
+prompt Direto (baseline)** — que este mesmo documento e o `Registro_Prompts.pdf`
+classificam como a suíte mais superficial, testando só valores já parados nos
+limites — atinge 100% de cobertura de statement do pacote `gildedrose`. Isso
+acontece porque `UpdateQuality` tem só um caminho de código por tipo de item;
+basta executar cada ramo uma vez para chegar a 100%, independentemente de
+testar os valores de fronteira corretos. As suítes mais profundas (Persona
+Pattern, Chain-of-Thought) não aumentam essa cobertura de statement — ela já
+estava no teto —, mas aumentam a cobertura de *casos de borda*, uma dimensão
+que `go tool cover` não mede. Vale citar isso explicitamente no vídeo: "100%
+de cobertura não significa suíte adequada".

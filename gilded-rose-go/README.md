@@ -24,7 +24,7 @@ go tool cover -html=coverage.out
 
 Além do kata original em [gildedrose/](gildedrose/), este diretório contém as 5 suítes de
 testes geradas pelo ChatGPT (uma por técnica de prompt), documentadas em
-[`../Registro_Prompts.pdf`](../Registro_Prompts.pdf):
+[`../docs/Registro_Prompts.pdf`](../docs/Registro_Prompts.pdf):
 
 | Pacote | Técnica |
 |---|---|
@@ -52,9 +52,10 @@ go tool cover -func=coverage.out
 ```
 
 Resultado atual: as 5 suítes compilam e passam 100%, com 100% de cobertura de statement do
-pacote `gildedrose`. Ver [`../LOG-CORRECOES.md`](../LOG-CORRECOES.md) para as correções manuais
-que foram necessárias (responsabilidade da Dupla 2) e para uma observação sobre o que essa
-cobertura de 100% não garante — material de apoio para a auditoria da Dupla 3.
+pacote `gildedrose`. Ver as seções "Intervenção manual na integração" e "Cobertura de statement
+como falso positivo" em [`AUDITORIA-TESTES-IA.md`](AUDITORIA-TESTES-IA.md) para as correções
+manuais que foram necessárias (responsabilidade da Dupla 2) e para uma observação sobre o que
+essa cobertura de 100% não garante.
 
 ## Auditoria manual (Dupla 3)
 
