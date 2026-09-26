@@ -176,3 +176,73 @@ Conferência cruzada com o corpo da função e a análise estrutural:
 A alcançabilidade acima é uma propriedade das conexões do grafo, não uma afirmação de que toda combinação de resultados das condições seja viável para um mesmo item. Comparações repetidas e identidades de nome impõem relações entre decisões.
 
 A única delimitação de modelagem que pode exigir revisão humana é a inclusão futura de fluxo excepcional para elementos `nil`; este documento explicita o escopo normal. A expressão composta permanece como um nó de decisão de fonte, com a avaliação interna documentada. Não foi identificada ambiguidade nos destinos dos ramos explícitos.
+
+## 6. Complexidade Ciclomática
+
+### 6.1 Pelos nós predicados
+
+**V(G) = P + 1**
+
+Os nós predicados são os 17 nós de decisão.
+
+| Decisão | Nó | Decisão | Nó | Decisão | Nó |
+|---------|----|---------|----|---------|----|
+| D1 | B3 | D7 | B11 | D13 | B20 |
+| D2 | B4 | D8 | B12 | D14 | B21 |
+| D3 | B5 | D9 | B14 | D15 | B22 |
+| D4 | B6 | D10 | B15 | D16 | B23 |
+| D5 | B8 | D11 | B17 | D17 | B26 |
+| D6 | B10 | D12 | B19 | | |
+
+**V(G) = 17 + 1 = 18**
+
+### 6.2 Por arestas e nós
+
+**V(G) = E − N + 2**
+
+- **N = 29**: nós B1 a B29.
+- **E = 45**: arestas listadas na seção 3.
+
+Conferência da quantidade de arestas pelo grau de saída de cada nó:
+
+| Tipo de nó | Nós | Quantidade | Arestas de saída | Total |
+|------------|-----|------------|------------------|-------|
+| Decisão | B3, B4, B5, B6, B8, B10, B11, B12, B14, B15, B17, B19, B20, B21, B22, B23, B26 | 17 | 2 (True/False) | 34 |
+| Sequencial | B1, B2, B7, B9, B13, B16, B18, B24, B25, B27, B28 | 11 | 1 | 11 |
+| Saída | B29 | 1 | 0 | 0 |
+| **Total** | | **29** | | **45** |
+
+**V(G) = 45 − 29 + 2 = 18**
+
+### 6.3 Resultado
+
+| Fórmula | Cálculo | Resultado |
+|---------|---------|-----------|
+| P + 1 | 17 + 1 | 18 |
+| E − N + 2 | 45 − 29 + 2 | 18 |
+
+As duas fórmulas convergem: **V(G) = 18**. Esse é o número de caminhos linearmente independentes do CFG, ou seja, a quantidade mínima de caminhos de uma base para cobertura de caminhos básicos.
+
+## 7. Caminhos independentes
+
+
+| ID | Entrada | Caminho | Saída esperada |
+|----|---------|---------|----------------|
+| C1 | `[]` (slice vazio) | B1 → B2 → B3 → B29 | Nenhuma alteração |
+| C2 | (Comum, 5, 10) | B1 → B2 → B3 → B4 → B5 → B6 → B7 → B17 → B18 → B19 → B28 → B3 → B29 | (4, 9) |
+| C3 | (Comum, 5, 0) | B1 → B2 → B3 → B4 → B5 → B17 → B18 → B19 → B28 → B3 → B29 | (4, 0) |
+| C4 | (Sulfuras, 5, 80) | B1 → B2 → B3 → B4 → B5 → B6 → B17 → B19 → B28 → B3 → B29 | (5, 80) |
+| C5 | (Sulfuras, 5, 0) | B1 → B2 → B3 → B4 → B5 → B17 → B19 → B28 → B3 → B29 | (5, 0) |
+| C6 | (Aged Brie, 5, 10) | B1 → B2 → B3 → B4 → B8 → B9 → B10 → B17 → B18 → B19 → B28 → B3 → B29 | (4, 11) |
+| C7 | (Aged Brie, 5, 50) | B1 → B2 → B3 → B4 → B8 → B17 → B18 → B19 → B28 → B3 → B29 | (4, 50) |
+| C8 | (Backstage, 15, 10) | B1 → B2 → B3 → B4 → B8 → B9 → B10 → B11 → B14 → B17 → B18 → B19 → B28 → B3 → B29 | (14, 11) |
+| C9 | (Backstage, 8, 10) | B1 → B2 → B3 → B4 → B8 → B9 → B10 → B11 → B12 → B13 → B14 → B17 → B18 → B19 → B28 → B3 → B29 | (7, 12) |
+| C10 | (Backstage, 8, 49) | B1 → B2 → B3 → B4 → B8 → B9 → B10 → B11 → B12 → B14 → B17 → B18 → B19 → B28 → B3 → B29 | (7, 50) |
+| C11 | (Backstage, 3, 10) | B1 → B2 → B3 → B4 → B8 → B9 → B10 → B11 → B12 → B13 → B14 → B15 → B16 → B17 → B18 → B19 → B28 → B3 → B29 | (2, 13) |
+| C12 | (Backstage, 3, 49) | B1 → B2 → B3 → B4 → B8 → B9 → B10 → B11 → B12 → B14 → B15 → B17 → B18 → B19 → B28 → B3 → B29 | (2, 50) |
+| C13 | (Comum, 0, 10) | B1 → B2 → B3 → B4 → B5 → B6 → B7 → B17 → B18 → B19 → B20 → B21 → B22 → B23 → B24 → B28 → B3 → B29 | (-1, 8) |
+| C14 | (Comum, 0, 1) | B1 → B2 → B3 → B4 → B5 → B6 → B7 → B17 → B18 → B19 → B20 → B21 → B22 → B28 → B3 → B29 | (-1, 0) |
+| C15 | (Sulfuras, -1, 80) | B1 → B2 → B3 → B4 → B5 → B6 → B17 → B19 → B20 → B21 → B22 → B23 → B28 → B3 → B29 | (-1, 80) |
+| C16 | (Backstage, 0, 10) | B1 → B2 → B3 → B4 → B8 → B9 → B10 → B11 → B12 → B13 → B14 → B15 → B16 → B17 → B18 → B19 → B20 → B21 → B25 → B28 → B3 → B29 | (-1, 0) |
+| C17 | (Aged Brie, 0, 10) | B1 → B2 → B3 → B4 → B8 → B9 → B10 → B17 → B18 → B19 → B20 → B26 → B27 → B28 → B3 → B29 | (-1, 12) |
+| C18 | (Aged Brie, 0, 49) | B1 → B2 → B3 → B4 → B8 → B9 → B10 → B17 → B18 → B19 → B20 → B26 → B28 → B3 → B29 | (-1, 50) |
