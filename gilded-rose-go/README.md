@@ -33,6 +33,7 @@ testes geradas pelo ChatGPT (uma por técnica de prompt), documentadas em
 | [`prompt_tests/persona_pattern`](prompt_tests/persona_pattern) | Persona Pattern |
 | [`prompt_tests/few_shot`](prompt_tests/few_shot) | Few-shot |
 | [`prompt_tests/spec_driven`](prompt_tests/spec_driven) | Spec-driven (bônus) |
+| [`prompt_tests/estruturado`](prompt_tests/estruturado) | **Iteração 2:** Prompt Estruturado (caixa branca, baseado no CFG). Ver [`../docs/iteracao2/prompt-estruturado.md`](../docs/iteracao2/prompt-estruturado.md) |
 
 Cada suíte é um pacote Go independente (testes black-box, importando
 `github.com/emilybache/gildedrose-refactoring-kata/gildedrose`), para que nenhuma técnica
@@ -56,6 +57,19 @@ pacote `gildedrose`. Ver as seções "Intervenção manual na integração" e "C
 como falso positivo" em [`AUDITORIA-TESTES-IA.md`](AUDITORIA-TESTES-IA.md) para as correções
 manuais que foram necessárias (responsabilidade da Dupla 2) e para uma observação sobre o que
 essa cobertura de 100% não garante.
+
+## Cobertura de Decisão (Iteração 2)
+
+O `go test -cover` só mede statements. O medidor em [`_decisioncov/`](_decisioncov/) informa
+quais dos 34 ramos (D1–D17, True/False) de `UpdateQuality` cada suíte percorre, usando uma
+cópia instrumentada da função em uma pasta temporária (nenhum arquivo do repositório é
+alterado):
+
+```shell
+go run ./_decisioncov ./_decisioncov/validacao   # validação: os 8 casos manuais dão 34/34
+go run ./_decisioncov ./prompt_tests/...         # uma linha por suíte
+go run ./_decisioncov -matriz ./prompt_tests/... # com a matriz ramo × suíte
+```
 
 ## Auditoria manual (Dupla 3)
 

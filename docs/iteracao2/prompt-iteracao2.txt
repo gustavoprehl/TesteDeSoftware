@@ -1,0 +1,140 @@
+Você é um Engenheiro de QA Sênior especializado em teste estrutural (caixa branca) de código legado. Sua tarefa NÃO é descobrir as regras de negócio do sistema Gilded Rose. Sua tarefa é produzir uma suíte de testes em Go que percorra a estrutura de controle da função abaixo, com rastreabilidade comprovada entre cada caso de teste e os ramos que ele cobre.
+
+## 1. Código sob teste
+
+Módulo Go: github.com/emilybache/gildedrose-refactoring-kata
+Pacote: gildedrose (arquivo gildedrose/gildedrose.go). Os números à esquerda são as linhas do arquivo e não fazem parte do código.
+
+ 1 | package gildedrose
+ 2 |
+ 3 | type Item struct {
+ 4 |     Name            string
+ 5 |     SellIn, Quality int
+ 6 | }
+ 7 |
+ 8 | func UpdateQuality(items []*Item) {
+ 9 |     for i := 0; i < len(items); i++ {
+10 |
+11 |         if items[i].Name != "Aged Brie" && items[i].Name != "Backstage passes to a TAFKAL80ETC concert" {
+12 |             if items[i].Quality > 0 {
+13 |                 if items[i].Name != "Sulfuras, Hand of Ragnaros" {
+14 |                     items[i].Quality = items[i].Quality - 1
+15 |                 }
+16 |             }
+17 |         } else {
+18 |             if items[i].Quality < 50 {
+19 |                 items[i].Quality = items[i].Quality + 1
+20 |                 if items[i].Name == "Backstage passes to a TAFKAL80ETC concert" {
+21 |                     if items[i].SellIn < 11 {
+22 |                         if items[i].Quality < 50 {
+23 |                             items[i].Quality = items[i].Quality + 1
+24 |                         }
+25 |                     }
+26 |                     if items[i].SellIn < 6 {
+27 |                         if items[i].Quality < 50 {
+28 |                             items[i].Quality = items[i].Quality + 1
+29 |                         }
+30 |                     }
+31 |                 }
+32 |             }
+33 |         }
+34 |
+35 |         if items[i].Name != "Sulfuras, Hand of Ragnaros" {
+36 |             items[i].SellIn = items[i].SellIn - 1
+37 |         }
+38 |
+39 |         if items[i].SellIn < 0 {
+40 |             if items[i].Name != "Aged Brie" {
+41 |                 if items[i].Name != "Backstage passes to a TAFKAL80ETC concert" {
+42 |                     if items[i].Quality > 0 {
+43 |                         if items[i].Name != "Sulfuras, Hand of Ragnaros" {
+44 |                             items[i].Quality = items[i].Quality - 1
+45 |                         }
+46 |                     }
+47 |                 } else {
+48 |                     items[i].Quality = items[i].Quality - items[i].Quality
+49 |                 }
+50 |             } else {
+51 |                 if items[i].Quality < 50 {
+52 |                     items[i].Quality = items[i].Quality + 1
+53 |                 }
+54 |             }
+55 |         }
+56 |     }
+57 |
+58 | }
+
+## 2. Modelo estrutural (Grafo de Fluxo de Controle já validado; use exatamente esta numeração)
+
+Granularidade: cada expressão condicional completa do código-fonte é UMA decisão. A condição composta da linha 11 (com &&) é uma única decisão, D2, e não deve ser dividida em duas.
+
+| Decisão | Linha | Condição | Se True, segue para | Se False, segue para |
+|---|---|---|---|---|
+| D1 | 9 | i < len(items) | linha 11 (D2) | fim da função |
+| D2 | 11 | Name != "Aged Brie" && Name != "Backstage passes to a TAFKAL80ETC concert" | linha 12 (D3) | linha 18 (D5) |
+| D3 | 12 | Quality > 0 | linha 13 (D4) | linha 35 (D11) |
+| D4 | 13 | Name != "Sulfuras, Hand of Ragnaros" | linha 14, depois D11 | linha 35 (D11) |
+| D5 | 18 | Quality < 50 | linha 19, depois D6 | linha 35 (D11) |
+| D6 | 20 | Name == "Backstage passes to a TAFKAL80ETC concert" | linha 21 (D7) | linha 35 (D11) |
+| D7 | 21 | SellIn < 11 | linha 22 (D8) | linha 26 (D9) |
+| D8 | 22 | Quality < 50 | linha 23, depois D9 | linha 26 (D9) |
+| D9 | 26 | SellIn < 6 | linha 27 (D10) | linha 35 (D11) |
+| D10 | 27 | Quality < 50 | linha 28, depois D11 | linha 35 (D11) |
+| D11 | 35 | Name != "Sulfuras, Hand of Ragnaros" | linha 36, depois D12 | linha 39 (D12) |
+| D12 | 39 | SellIn < 0 | linha 40 (D13) | próxima iteração (D1) |
+| D13 | 40 | Name != "Aged Brie" | linha 41 (D14) | linha 51 (D17) |
+| D14 | 41 | Name != "Backstage passes to a TAFKAL80ETC concert" | linha 42 (D15) | linha 48, depois D1 |
+| D15 | 42 | Quality > 0 | linha 43 (D16) | próxima iteração (D1) |
+| D16 | 43 | Name != "Sulfuras, Hand of Ragnaros" | linha 44, depois D1 | próxima iteração (D1) |
+| D17 | 51 | Quality < 50 | linha 52, depois D1 | próxima iteração (D1) |
+
+Métricas do grafo: 29 nós, 45 arestas, 17 decisões, complexidade ciclomática V(G) = 18.
+
+Observações estruturais que você deve levar em conta ao escolher as entradas:
+- As guardas de Quality (linhas 18, 22, 27, 42 e 51) leem o valor de Quality JÁ ALTERADO pelas atribuições anteriores na mesma iteração, não o valor de entrada.
+- As decisões D7 e D9 (linhas 21 e 26) usam SellIn ANTES do decremento da linha 36. A decisão D12 (linha 39) usa SellIn DEPOIS desse decremento, exceto para Sulfuras, que nunca é decrementado.
+- D9 (linha 26) é um if independente, não um else if de D7: após D7, D9 é sempre avaliada.
+- O item "Sulfuras, Hand of Ragnaros" entra pelo lado True de D2 e pode chegar ao lado True de D12 se o seu SellIn já for negativo.
+
+## 3. Critério de cobertura (meta)
+
+Meta: 100% de Cobertura de Decisão. Cada uma das 17 decisões deve ser avaliada como True e como False em pelo menos um caso, totalizando 34 ramos: D1T, D1F, D2T, D2F, ..., D17T, D17F.
+
+Definição de caso de teste: UM item em UMA chamada de UpdateQuality, com entrada (Name, SellIn, Quality) e saída esperada (SellIn, Quality). Não agrupe vários itens na mesma chamada para economizar casos.
+
+Busque o MENOR conjunto de casos que cubra os 34 ramos. Se concluir que algum ramo é inalcançável, prove isso em vez de ignorá-lo.
+
+## 4. Processo obrigatório (mostre cada etapa antes do código)
+
+Etapa 1. Condições de alcance: para cada um dos 34 ramos, escreva a restrição sobre (Name, SellIn, Quality) de ENTRADA que faz aquele ramo ser tomado, considerando os valores já alterados no ponto em que a decisão é avaliada.
+
+Etapa 2. Seleção e rastreamento dos casos: escolha os valores de entrada. Para cada caso, trace a execução linha a linha e registre: a sequência de decisões com o resultado (exemplo: D1=T, D2=F, D5=T, D6=T, D7=F, D9=F, D11=T, D12=F, D1=F), o valor de SellIn e Quality após cada atribuição e a saída final.
+
+Etapa 3. Matriz de rastreabilidade: tabela com as 34 linhas (D1T a D17F) e, para cada uma, o(s) caso(s) que a cobre(m). Nenhuma linha pode ficar vazia.
+
+Etapa 4. Justificativa de minimalidade: explique por que não é possível atingir os 34 ramos com menos casos.
+
+Etapa 5. Código Go.
+
+## 5. Regras obrigatórias do código gerado
+
+- Um único arquivo estruturado_test.go, com package estruturado_test (teste externo, caixa-preta em relação ao pacote), importando somente "testing" e "github.com/emilybache/gildedrose-refactoring-kata/gildedrose".
+- Use somente o que existe no código acima: gildedrose.Item{Name: ..., SellIn: ..., Quality: ...} e gildedrose.UpdateQuality([]*gildedrose.Item{...}). NÃO existe struct GildedRose, método UpdateQuality com receptor, construtor ou qualquer outra função. Não invente APIs.
+- Assinatura dos testes com t *testing.T (T maiúsculo). Sem bibliotecas externas (sem testify).
+- Um teste table-driven. Cada linha da tabela é um caso, com campo id (ex.: "T1") e campo ramos (string listando os ramos que o caso cobre, idêntica à matriz da Etapa 3). Execute cada linha com t.Run.
+- Verifique SellIn e Quality de saída.
+- O valor esperado deve ser o que o CÓDIGO ACIMA produz (teste de caracterização de código legado), obtido pelo rastreamento da Etapa 2. Não corrija o comportamento e não assuma regras de negócio que não estejam no código.
+- Use os nomes exatamente como aparecem no código ("Aged Brie", "Backstage passes to a TAFKAL80ETC concert", "Sulfuras, Hand of Ragnaros"). Para item comum, use qualquer outro nome.
+
+## 6. Restrições contra alucinação
+
+- Todos os testes devem passar contra o código atual. Não afirme que algum teste "deveria falhar".
+- Não afirme cobertura que o rastreamento da Etapa 2 não demonstre: a coluna ramos de cada caso precisa bater com a sequência de decisões traçada.
+- Se você acreditar que existe um requisito de negócio sem ramo correspondente no código, registre-o apenas em uma seção final "Observações", sem gerar teste para ele.
+- Não cite arquivos, funções ou comportamentos que não estejam neste prompt.
+
+## 7. Formato da resposta
+
+1. Etapas 1 a 4, com tabelas em Markdown.
+2. Código completo em um único bloco ```go```.
+3. Observações (opcional).
