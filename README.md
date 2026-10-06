@@ -131,7 +131,7 @@ tem ramo para esse item: cobertura estrutural não revela requisito ausente.
 
 ## Entregáveis
 
-- Slides da Iteração 2 (versão final): [`docs/iteracao2/AI_Quality_Gilded_Rose_IT2.pptx`](docs/iteracao2/AI_Quality_Gilded_Rose_IT2.pptx)
+- Slides da Iteração 2 (versão final): [`docs/iteracao2/AI_Quality_Gilded_Rose_IT2.pdf`](docs/iteracao2/AI_Quality_Gilded_Rose_IT2.pdf) / [`.pptx`](docs/iteracao2/AI_Quality_Gilded_Rose_IT2.pptx)
 - Slides + relatório consolidado da Iteração 1: [`docs/AI_Quality_Gilded_Rose.pdf`](docs/AI_Quality_Gilded_Rose.pdf) / [`.pptx`](docs/AI_Quality_Gilded_Rose.pptx)
 - [Vídeo-demonstração](https://drive.google.com/file/d/1MBs7JPvyEo5RFLzwKYxWZbS09PH1rDXj/view?usp=sharing)
 - Log de Crítica individual: entregue em sala, fora deste repositório
