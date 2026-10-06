@@ -1,337 +1,658 @@
 # Resposta da IA ao Prompt Estruturado (Iteração 2)
 
-> Registro literal da resposta obtida com o prompt de [prompt-iteracao2.txt](prompt-iteracao2.txt),
-> em uma execução única, em contexto novo e isolado (detalhes em
-> [prompt-estruturado.md](prompt-estruturado.md), seção 4). Nada foi editado abaixo desta nota.
+> Registro literal da resposta do **ChatGPT** ao prompt de [prompt-iteracao2.txt](prompt-iteracao2.txt),
+> em uma execução única, em conversa nova (detalhes em [prompt-estruturado.md](prompt-estruturado.md),
+> seção 4). Conversa original: <https://chatgpt.com/share/6ac4e403-4234-83e9-87e6-89506b49550b>.
+>
+> O texto foi copiado da conversa. Na cópia, as tabelas chegaram separadas por tabulação e os
+> blocos de código sem delimitadores; abaixo, só essa marcação Markdown foi reconstituída
+> (tabelas, títulos e blocos de código). Nenhuma palavra, valor ou ramo foi alterado.
 > O código da Etapa 5 está integrado em
 > [prompt_tests/estruturado/estruturado_test.go](../../gilded-rose-go/prompt_tests/estruturado/estruturado_test.go).
 
 ---
 
-# Suíte estrutural (caixa branca) para `UpdateQuality`: 100% de Cobertura de Decisão
+A análise abaixo trata exclusivamente da estrutura de controle apresentada. Não uso nenhuma regra de negócio externa ao código.
 
-**Notação:** N = Name, S = SellIn de entrada, Q = Quality de entrada.
-Categorias de nome:
-- **AB** = "Aged Brie"
-- **BP** = "Backstage passes to a TAFKAL80ETC concert"
-- **SU** = "Sulfuras, Hand of Ragnaros"
-- **C** = qualquer outro nome (item comum)
+Para simplificar as restrições, vou usar:
 
-Todos os casos usam uma lista com exatamente 1 item.
+- A = "Aged Brie"
+- B = "Backstage passes to a TAFKAL80ETC concert"
+- S = "Sulfuras, Hand of Ragnaros"
+- O = qualquer outro nome
+- s = SellIn de entrada
+- q = Quality de entrada
 
----
+Como SellIn e Quality são int, expressões como s < 1 equivalem a s <= 0.
 
-## Etapa 1: Condições de alcance (restrições sobre a entrada)
+## Etapa 1 — Condições de alcance dos 34 ramos
 
-Valores derivados que as guardas realmente leem:
-- **Linha 22:** Q₂₂ = Q + 1.
-- **Linha 27:** Q₂₇ = Q + 2 se S < 11 e Q ≤ 48. Caso contrário, Q₂₇ = Q + 1.
-- **Linha 39:** S₃₉ = S − 1 se N ≠ SU. Se N = SU, S₃₉ = S.
-- **Linha 42, item comum:** Q₄₂ = Q − 1 se Q > 0. Caso contrário, Q₄₂ = Q.
-- **Linha 42, Sulfuras:** Q₄₂ = Q.
-- **Linha 51:** Q₅₁ = Q + 1 se Q < 50. Caso contrário, Q₅₁ = Q.
+As condições abaixo são condições sobre os valores de entrada, mesmo quando a decisão lê um valor já alterado.
 
-| Ramo | Restrição de entrada |
+| Ramo | Restrição de entrada que permite tomar o ramo |
 |---|---|
-| D1T | lista com ≥ 1 item (i = 0 < 1) |
-| D1F | sempre ocorre após processar o único item (i = 1 = len) |
-| D2T | N ∈ {C, SU} |
-| D2F | N ∈ {AB, BP} |
-| D3T | N ∈ {C, SU} ∧ Q > 0 |
-| D3F | N ∈ {C, SU} ∧ Q ≤ 0 |
-| D4T | N = C ∧ Q > 0 |
-| D4F | N = SU ∧ Q > 0 |
-| D5T | N ∈ {AB, BP} ∧ Q < 50 |
-| D5F | N ∈ {AB, BP} ∧ Q ≥ 50 |
-| D6T | N = BP ∧ Q < 50 |
-| D6F | N = AB ∧ Q < 50 |
-| D7T | N = BP ∧ Q < 50 ∧ S < 11 |
-| D7F | N = BP ∧ Q < 50 ∧ S ≥ 11 |
-| D8T | N = BP ∧ S < 11 ∧ Q+1 < 50, ou seja, Q ≤ 48 |
-| D8F | N = BP ∧ S < 11 ∧ Q < 50 ∧ Q+1 ≥ 50, ou seja, Q = 49 |
-| D9T | N = BP ∧ Q < 50 ∧ S < 6 |
-| D9F | N = BP ∧ Q < 50 ∧ S ≥ 6 |
-| D10T | N = BP ∧ S < 6 ∧ Q₂₇ = Q+2 < 50, ou seja, Q ≤ 47 |
-| D10F | N = BP ∧ S < 6 ∧ 48 ≤ Q ≤ 49 (Q₂₇ = 50 nos dois casos) |
-| D11T | N ≠ SU |
-| D11F | N = SU |
-| D12T | (N ≠ SU ∧ S − 1 < 0, ou seja, S ≤ 0) ∨ (N = SU ∧ S < 0) |
-| D12F | (N ≠ SU ∧ S ≥ 1) ∨ (N = SU ∧ S ≥ 0) |
-| D13T | D12T ∧ N ∈ {C, SU, BP} |
-| D13F | N = AB ∧ S ≤ 0 |
-| D14T | D12T ∧ N ∈ {C, SU} |
-| D14F | N = BP ∧ S ≤ 0 |
-| D15T | (N = C ∧ S ≤ 0 ∧ Q₄₂ > 0, ou seja, Q ≥ 2) ∨ (N = SU ∧ S < 0 ∧ Q > 0) |
-| D15F | (N = C ∧ S ≤ 0 ∧ Q ≤ 1) ∨ (N = SU ∧ S < 0 ∧ Q ≤ 0) |
-| D16T | N = C ∧ S ≤ 0 ∧ Q ≥ 2 |
-| D16F | N = SU ∧ S < 0 ∧ Q > 0 |
-| D17T | N = AB ∧ S ≤ 0 ∧ Q₅₁ < 50, ou seja, Q ≤ 48 |
-| D17F | N = AB ∧ S ≤ 0 ∧ Q₅₁ ≥ 50, ou seja, Q ≥ 49 |
+| D1T | Sempre, pois cada teste contém exatamente 1 item e inicialmente 0 < len(items) |
+| D1F | Sempre após processar o único item, pois i passa a 1 e 1 < 1 é falso |
+| D2T | Name = O ou Name = S |
+| D2F | Name = A ou Name = B |
+| D3T | (Name = O ou S) ∧ q > 0 |
+| D3F | (Name = O ou S) ∧ q <= 0 |
+| D4T | Name = O ∧ q > 0 |
+| D4F | Name = S ∧ q > 0 |
+| D5T | (Name = A ou B) ∧ q < 50 |
+| D5F | (Name = A ou B) ∧ q >= 50 |
+| D6T | Name = B ∧ q < 50 |
+| D6F | Name = A ∧ q < 50 |
+| D7T | Name = B ∧ q < 50 ∧ s < 11 |
+| D7F | Name = B ∧ q < 50 ∧ s >= 11 |
+| D8T | Name = B ∧ s < 11 ∧ q <= 48 |
+| D8F | Name = B ∧ s < 11 ∧ q = 49 |
+| D9T | Name = B ∧ q < 50 ∧ s < 6 |
+| D9F | Name = B ∧ q < 50 ∧ s >= 6 |
+| D10T | Name = B ∧ s < 6 ∧ q <= 47 |
+| D10F | Name = B ∧ s < 6 ∧ (q = 48 ou q = 49) |
+| D11T | Name != S |
+| D11F | Name = S |
+| D12T | (Name != S ∧ s <= 0) ou (Name = S ∧ s < 0) |
+| D12F | (Name != S ∧ s >= 1) ou (Name = S ∧ s >= 0) |
+| D13T | (Name = B ∧ s <= 0) ou (Name = O ∧ s <= 0) ou (Name = S ∧ s < 0) |
+| D13F | Name = A ∧ s <= 0 |
+| D14T | (Name = O ∧ s <= 0) ou (Name = S ∧ s < 0) |
+| D14F | Name = B ∧ s <= 0 |
+| D15T | (Name = O ∧ s <= 0 ∧ q > 1) ou (Name = S ∧ s < 0 ∧ q > 0) |
+| D15F | (Name = O ∧ s <= 0 ∧ q <= 1) ou (Name = S ∧ s < 0 ∧ q <= 0) |
+| D16T | Name = O ∧ s <= 0 ∧ q > 1 |
+| D16F | Name = S ∧ s < 0 ∧ q > 0 |
+| D17T | Name = A ∧ s <= 0 ∧ q <= 48 |
+| D17F | Name = A ∧ s <= 0 ∧ q >= 49 |
 
-Nenhum ramo é inalcançável: todas as 34 restrições são satisfatíveis.
+### Pontos em que a mutação anterior altera a restrição
 
----
+Há quatro casos particularmente importantes.
 
-## Etapa 2: Seleção e rastreamento dos casos
+Em D8, Quality já passou pela linha 19. Logo:
 
-| Caso | Name | SellIn | Quality |
-|---|---|---|---|
-| T1 | Sulfuras, Hand of Ragnaros | -1 | 80 |
-| T2 | Item comum | 0 | 0 |
-| T3 | Item comum | 0 | 10 |
-| T4 | Aged Brie | 0 | 50 |
-| T5 | Aged Brie | 0 | 10 |
-| T6 | Backstage passes to a TAFKAL80ETC concert | 11 | 10 |
-| T7 | Backstage passes to a TAFKAL80ETC concert | 5 | 10 |
-| T8 | Backstage passes to a TAFKAL80ETC concert | 0 | 49 |
+```text
+Quality_D8 = q + 1
+```
 
-### T1: SU, S = -1, Q = 80
-| Linha | Decisão / atribuição | SellIn | Quality |
-|---|---|---|---|
-| 9 | D1 = T (0 < 1) | -1 | 80 |
-| 11 | D2 = T (não é AB nem BP) | -1 | 80 |
-| 12 | D3 = T (80 > 0) | -1 | 80 |
-| 13 | D4 = F (é SU) | -1 | 80 |
-| 35 | D11 = F (é SU, sem decremento) | -1 | 80 |
-| 39 | D12 = T (-1 < 0) | -1 | 80 |
-| 40 | D13 = T | -1 | 80 |
-| 41 | D14 = T | -1 | 80 |
-| 42 | D15 = T (80 > 0) | -1 | 80 |
-| 43 | D16 = F (é SU) | -1 | 80 |
-| 9 | D1 = F (1 < 1) | | |
+Portanto:
 
-- Sequência: D1=T, D2=T, D3=T, D4=F, D11=F, D12=T, D13=T, D14=T, D15=T, D16=F, D1=F
-- **Saída: SellIn = -1, Quality = 80**
+```text
+D8T: q + 1 < 50  => q <= 48
+D8F: q + 1 >= 50 => como D5T exige q < 50, q = 49
+```
 
-### T2: C, S = 0, Q = 0
-| Linha | Decisão / atribuição | SellIn | Quality |
-|---|---|---|---|
-| 9 | D1 = T | 0 | 0 |
-| 11 | D2 = T | 0 | 0 |
-| 12 | D3 = F (0 > 0 é falso) | 0 | 0 |
-| 35 | D11 = T | | |
-| 36 | SellIn = 0 − 1 | -1 | 0 |
-| 39 | D12 = T (-1 < 0) | -1 | 0 |
-| 40 | D13 = T | | |
-| 41 | D14 = T | | |
-| 42 | D15 = F (0 > 0 é falso) | -1 | 0 |
-| 9 | D1 = F | | |
+Em D10, para s < 6, D7 necessariamente é verdadeiro. Assim:
 
-- Sequência: D1=T, D2=T, D3=F, D11=T, D12=T, D13=T, D14=T, D15=F, D1=F
-- **Saída: SellIn = -1, Quality = 0**
+```text
+q <= 48:
+linha 19 => q + 1
+D8T      => linha 23 => q + 2
+```
 
-### T3: C, S = 0, Q = 10
-| Linha | Decisão / atribuição | SellIn | Quality |
-|---|---|---|---|
-| 9 | D1 = T | 0 | 10 |
-| 11 | D2 = T | | |
-| 12 | D3 = T (10 > 0) | | |
-| 13 | D4 = T (não é SU) | | |
-| 14 | Quality = 10 − 1 | 0 | 9 |
-| 35 | D11 = T | | |
-| 36 | SellIn = 0 − 1 | -1 | 9 |
-| 39 | D12 = T | | |
-| 40 | D13 = T | | |
-| 41 | D14 = T | | |
-| 42 | D15 = T (9 > 0) | | |
-| 43 | D16 = T | | |
-| 44 | Quality = 9 − 1 | -1 | 8 |
-| 9 | D1 = F | | |
+Consequentemente:
 
-- Sequência: D1=T, D2=T, D3=T, D4=T, D11=T, D12=T, D13=T, D14=T, D15=T, D16=T, D1=F
-- **Saída: SellIn = -1, Quality = 8**
+```text
+D10T: q + 2 < 50 => q <= 47
+D10F: q = 48 ou q = 49
+```
 
-### T4: AB, S = 0, Q = 50
-| Linha | Decisão / atribuição | SellIn | Quality |
-|---|---|---|---|
-| 9 | D1 = T | 0 | 50 |
-| 11 | D2 = F (é AB) | | |
-| 18 | D5 = F (50 < 50 é falso) | 0 | 50 |
-| 35 | D11 = T | | |
-| 36 | SellIn = 0 − 1 | -1 | 50 |
-| 39 | D12 = T | | |
-| 40 | D13 = F (é AB) | | |
-| 51 | D17 = F (50 < 50 é falso) | -1 | 50 |
-| 9 | D1 = F | | |
+Em D12, SellIn já foi decrementado para qualquer item exceto Sulfuras:
 
-- Sequência: D1=T, D2=F, D5=F, D11=T, D12=T, D13=F, D17=F, D1=F
-- **Saída: SellIn = -1, Quality = 50**
+```text
+item não-Sulfuras: SellIn_D12 = s - 1
+Sulfuras:          SellIn_D12 = s
+```
 
-### T5: AB, S = 0, Q = 10
-| Linha | Decisão / atribuição | SellIn | Quality |
-|---|---|---|---|
-| 9 | D1 = T | 0 | 10 |
-| 11 | D2 = F | | |
-| 18 | D5 = T (10 < 50) | | |
-| 19 | Quality = 10 + 1 | 0 | 11 |
-| 20 | D6 = F (não é BP) | | |
-| 35 | D11 = T | | |
-| 36 | SellIn = 0 − 1 | -1 | 11 |
-| 39 | D12 = T | | |
-| 40 | D13 = F | | |
-| 51 | D17 = T (11 < 50) | | |
-| 52 | Quality = 11 + 1 | -1 | 12 |
-| 9 | D1 = F | | |
+Finalmente, para um item comum expirado, D15 lê Quality depois da linha 14:
 
-- Sequência: D1=T, D2=F, D5=T, D6=F, D11=T, D12=T, D13=F, D17=T, D1=F
-- **Saída: SellIn = -1, Quality = 12**
+```text
+q > 0  => Quality_D15 = q - 1
+q <= 0 => Quality_D15 = q
+```
 
-### T6: BP, S = 11, Q = 10
-| Linha | Decisão / atribuição | SellIn | Quality |
-|---|---|---|---|
-| 9 | D1 = T | 11 | 10 |
-| 11 | D2 = F | | |
-| 18 | D5 = T | | |
-| 19 | Quality = 10 + 1 | 11 | 11 |
-| 20 | D6 = T | | |
-| 21 | D7 = F (11 < 11 é falso) | | |
-| 26 | D9 = F (11 < 6 é falso) | | |
-| 35 | D11 = T | | |
-| 36 | SellIn = 11 − 1 | 10 | 11 |
-| 39 | D12 = F (10 < 0 é falso) | 10 | 11 |
-| 9 | D1 = F | | |
+Por isso um item comum somente consegue D15T se q > 1.
 
-- Sequência: D1=T, D2=F, D5=T, D6=T, D7=F, D9=F, D11=T, D12=F, D1=F
-- **Saída: SellIn = 10, Quality = 11**
+## Etapa 2 — Seleção e rastreamento dos casos
 
-### T7: BP, S = 5, Q = 10
-| Linha | Decisão / atribuição | SellIn | Quality |
-|---|---|---|---|
-| 9 | D1 = T | 5 | 10 |
-| 11 | D2 = F | | |
-| 18 | D5 = T | | |
-| 19 | Quality = 10 + 1 | 5 | 11 |
-| 20 | D6 = T | | |
-| 21 | D7 = T (5 < 11) | | |
-| 22 | D8 = T (11 < 50) | | |
-| 23 | Quality = 11 + 1 | 5 | 12 |
-| 26 | D9 = T (5 < 6) | | |
-| 27 | D10 = T (12 < 50) | | |
-| 28 | Quality = 12 + 1 | 5 | 13 |
-| 35 | D11 = T | | |
-| 36 | SellIn = 5 − 1 | 4 | 13 |
-| 39 | D12 = F (4 < 0 é falso) | | |
-| 9 | D1 = F | | |
+O conjunto mínimo encontrado contém 8 casos.
 
-- Sequência: D1=T, D2=F, D5=T, D6=T, D7=T, D8=T, D9=T, D10=T, D11=T, D12=F, D1=F
-- **Saída: SellIn = 4, Quality = 13**
+| Caso | Name | SellIn | Quality | Saída SellIn | Saída Quality |
+|---|---|---|---|---|---|
+| T1 | Backstage | 0 | 49 | -1 | 0 |
+| T2 | Backstage | 5 | 10 | 4 | 13 |
+| T3 | Backstage | 11 | 10 | 10 | 11 |
+| T4 | Aged Brie | 0 | 0 | -1 | 2 |
+| T5 | Aged Brie | 0 | 50 | -1 | 50 |
+| T6 | Sulfuras | -1 | 10 | -1 | 10 |
+| T7 | item comum | 0 | 2 | -1 | 0 |
+| T8 | item comum | 0 | 0 | -1 | 0 |
 
-### T8: BP, S = 0, Q = 49
-| Linha | Decisão / atribuição | SellIn | Quality |
-|---|---|---|---|
-| 9 | D1 = T | 0 | 49 |
-| 11 | D2 = F | | |
-| 18 | D5 = T (49 < 50) | | |
-| 19 | Quality = 49 + 1 | 0 | 50 |
-| 20 | D6 = T | | |
-| 21 | D7 = T (0 < 11) | | |
-| 22 | D8 = F (50 < 50 é falso) | 0 | 50 |
-| 26 | D9 = T (0 < 6) | | |
-| 27 | D10 = F (50 < 50 é falso) | 0 | 50 |
-| 35 | D11 = T | | |
-| 36 | SellIn = 0 − 1 | -1 | 50 |
-| 39 | D12 = T | | |
-| 40 | D13 = T (não é AB) | | |
-| 41 | D14 = F (é BP) | | |
-| 48 | Quality = 50 − 50 | -1 | 0 |
-| 9 | D1 = F | | |
+### T1 — Backstage, SellIn=0, Quality=49
 
-- Sequência: D1=T, D2=F, D5=T, D6=T, D7=T, D8=F, D9=T, D10=F, D11=T, D12=T, D13=T, D14=F, D1=F
-- **Saída: SellIn = -1, Quality = 0**
+Entrada:
 
-### Resumo dos ramos cobertos (coluna `ramos` do código)
+```text
+Name    = Backstage passes to a TAFKAL80ETC concert
+SellIn  = 0
+Quality = 49
+```
 
-| Caso | Entrada (N, S, Q) | Saída (S, Q) | Ramos |
-|---|---|---|---|
-| T1 | SU, -1, 80 | -1, 80 | D1T D1F D2T D3T D4F D11F D12T D13T D14T D15T D16F |
-| T2 | C, 0, 0 | -1, 0 | D1T D1F D2T D3F D11T D12T D13T D14T D15F |
-| T3 | C, 0, 10 | -1, 8 | D1T D1F D2T D3T D4T D11T D12T D13T D14T D15T D16T |
-| T4 | AB, 0, 50 | -1, 50 | D1T D1F D2F D5F D11T D12T D13F D17F |
-| T5 | AB, 0, 10 | -1, 12 | D1T D1F D2F D5T D6F D11T D12T D13F D17T |
-| T6 | BP, 11, 10 | 10, 11 | D1T D1F D2F D5T D6T D7F D9F D11T D12F |
-| T7 | BP, 5, 10 | 4, 13 | D1T D1F D2F D5T D6T D7T D8T D9T D10T D11T D12F |
-| T8 | BP, 0, 49 | -1, 0 | D1T D1F D2F D5T D6T D7T D8F D9T D10F D11T D12T D13T D14F |
+| Linha/decisão | Resultado / estado |
+|---|---|
+| D1 | T |
+| D2 | F |
+| D5 | 49 < 50 → T |
+| linha 19 | Quality: 49 -> 50 |
+| D6 | T |
+| D7 | 0 < 11 → T |
+| D8 | 50 < 50 → F |
+| D9 | 0 < 6 → T |
+| D10 | 50 < 50 → F |
+| D11 | T |
+| linha 36 | SellIn: 0 -> -1 |
+| D12 | -1 < 0 → T |
+| D13 | T |
+| D14 | F |
+| linha 48 | Quality: 50 -> 0 |
+| D1 | F |
 
----
+Sequência:
 
-## Etapa 3: Matriz de rastreabilidade
+```text
+D1T, D2F, D5T, D6T, D7T, D8F, D9T, D10F,
+D11T, D12T, D13T, D14F, D1F
+```
 
-| Ramo | Caso(s) |
+Saída:
+
+```text
+SellIn  = -1
+Quality = 0
+```
+
+### T2 — Backstage, SellIn=5, Quality=10
+
+| Linha/decisão | Resultado / estado |
+|---|---|
+| D1 | T |
+| D2 | F |
+| D5 | T |
+| linha 19 | Quality: 10 -> 11 |
+| D6 | T |
+| D7 | 5 < 11 → T |
+| D8 | 11 < 50 → T |
+| linha 23 | Quality: 11 -> 12 |
+| D9 | 5 < 6 → T |
+| D10 | 12 < 50 → T |
+| linha 28 | Quality: 12 -> 13 |
+| D11 | T |
+| linha 36 | SellIn: 5 -> 4 |
+| D12 | 4 < 0 → F |
+| D1 | F |
+
+Sequência:
+
+```text
+D1T, D2F, D5T, D6T, D7T, D8T, D9T, D10T,
+D11T, D12F, D1F
+```
+
+Saída:
+
+```text
+SellIn  = 4
+Quality = 13
+```
+
+### T3 — Backstage, SellIn=11, Quality=10
+
+| Linha/decisão | Resultado / estado |
+|---|---|
+| D1 | T |
+| D2 | F |
+| D5 | T |
+| linha 19 | Quality: 10 -> 11 |
+| D6 | T |
+| D7 | 11 < 11 → F |
+| D9 | 11 < 6 → F |
+| D11 | T |
+| linha 36 | SellIn: 11 -> 10 |
+| D12 | 10 < 0 → F |
+| D1 | F |
+
+Sequência:
+
+```text
+D1T, D2F, D5T, D6T, D7F, D9F, D11T, D12F, D1F
+```
+
+Saída:
+
+```text
+SellIn  = 10
+Quality = 11
+```
+
+### T4 — Aged Brie, SellIn=0, Quality=0
+
+| Linha/decisão | Resultado / estado |
+|---|---|
+| D1 | T |
+| D2 | F |
+| D5 | 0 < 50 → T |
+| linha 19 | Quality: 0 -> 1 |
+| D6 | F |
+| D11 | T |
+| linha 36 | SellIn: 0 -> -1 |
+| D12 | T |
+| D13 | F |
+| D17 | 1 < 50 → T |
+| linha 52 | Quality: 1 -> 2 |
+| D1 | F |
+
+Sequência:
+
+```text
+D1T, D2F, D5T, D6F, D11T, D12T, D13F, D17T, D1F
+```
+
+Saída:
+
+```text
+SellIn  = -1
+Quality = 2
+```
+
+### T5 — Aged Brie, SellIn=0, Quality=50
+
+| Linha/decisão | Resultado / estado |
+|---|---|
+| D1 | T |
+| D2 | F |
+| D5 | 50 < 50 → F |
+| D11 | T |
+| linha 36 | SellIn: 0 -> -1 |
+| D12 | T |
+| D13 | F |
+| D17 | 50 < 50 → F |
+| D1 | F |
+
+Sequência:
+
+```text
+D1T, D2F, D5F, D11T, D12T, D13F, D17F, D1F
+```
+
+Saída:
+
+```text
+SellIn  = -1
+Quality = 50
+```
+
+### T6 — Sulfuras, SellIn=-1, Quality=10
+
+| Linha/decisão | Resultado / estado |
+|---|---|
+| D1 | T |
+| D2 | T |
+| D3 | 10 > 0 → T |
+| D4 | Name != Sulfuras → F |
+| D11 | Name != Sulfuras → F |
+| SellIn | não é alterado; continua -1 |
+| D12 | -1 < 0 → T |
+| D13 | T |
+| D14 | T |
+| D15 | 10 > 0 → T |
+| D16 | Name != Sulfuras → F |
+| D1 | F |
+
+Sequência:
+
+```text
+D1T, D2T, D3T, D4F, D11F, D12T,
+D13T, D14T, D15T, D16F, D1F
+```
+
+Saída:
+
+```text
+SellIn  = -1
+Quality = 10
+```
+
+Esse caso demonstra explicitamente a observação estrutural do enunciado: Sulfuras pode chegar a D12T quando o SellIn já entra negativo, mesmo não sofrendo o decremento da linha 36.
+
+### T7 — Item comum, SellIn=0, Quality=2
+
+Usaremos "Normal Item" como nome.
+
+| Linha/decisão | Resultado / estado |
+|---|---|
+| D1 | T |
+| D2 | T |
+| D3 | 2 > 0 → T |
+| D4 | T |
+| linha 14 | Quality: 2 -> 1 |
+| D11 | T |
+| linha 36 | SellIn: 0 -> -1 |
+| D12 | T |
+| D13 | T |
+| D14 | T |
+| D15 | 1 > 0 → T |
+| D16 | T |
+| linha 44 | Quality: 1 -> 0 |
+| D1 | F |
+
+Sequência:
+
+```text
+D1T, D2T, D3T, D4T, D11T, D12T,
+D13T, D14T, D15T, D16T, D1F
+```
+
+Saída:
+
+```text
+SellIn  = -1
+Quality = 0
+```
+
+### T8 — Item comum, SellIn=0, Quality=0
+
+| Linha/decisão | Resultado / estado |
+|---|---|
+| D1 | T |
+| D2 | T |
+| D3 | 0 > 0 → F |
+| D11 | T |
+| linha 36 | SellIn: 0 -> -1 |
+| D12 | T |
+| D13 | T |
+| D14 | T |
+| D15 | 0 > 0 → F |
+| D1 | F |
+
+Sequência:
+
+```text
+D1T, D2T, D3F, D11T, D12T,
+D13T, D14T, D15F, D1F
+```
+
+Saída:
+
+```text
+SellIn  = -1
+Quality = 0
+```
+
+## Etapa 3 — Matriz de rastreabilidade
+
+Nenhum dos 34 ramos fica sem cobertura.
+
+| Ramo | Caso(s) que cobrem |
 |---|---|
 | D1T | T1, T2, T3, T4, T5, T6, T7, T8 |
 | D1F | T1, T2, T3, T4, T5, T6, T7, T8 |
-| D2T | T1, T2, T3 |
-| D2F | T4, T5, T6, T7, T8 |
-| D3T | T1, T3 |
-| D3F | T2 |
-| D4T | T3 |
-| D4F | T1 |
-| D5T | T5, T6, T7, T8 |
-| D5F | T4 |
-| D6T | T6, T7, T8 |
-| D6F | T5 |
-| D7T | T7, T8 |
-| D7F | T6 |
-| D8T | T7 |
-| D8F | T8 |
-| D9T | T7, T8 |
-| D9F | T6 |
-| D10T | T7 |
-| D10F | T8 |
-| D11T | T2, T3, T4, T5, T6, T7, T8 |
-| D11F | T1 |
-| D12T | T1, T2, T3, T4, T5, T8 |
-| D12F | T6, T7 |
-| D13T | T1, T2, T3, T8 |
+| D2T | T6, T7, T8 |
+| D2F | T1, T2, T3, T4, T5 |
+| D3T | T6, T7 |
+| D3F | T8 |
+| D4T | T7 |
+| D4F | T6 |
+| D5T | T1, T2, T3, T4 |
+| D5F | T5 |
+| D6T | T1, T2, T3 |
+| D6F | T4 |
+| D7T | T1, T2 |
+| D7F | T3 |
+| D8T | T2 |
+| D8F | T1 |
+| D9T | T1, T2 |
+| D9F | T3 |
+| D10T | T2 |
+| D10F | T1 |
+| D11T | T1, T2, T3, T4, T5, T7, T8 |
+| D11F | T6 |
+| D12T | T1, T4, T5, T6, T7, T8 |
+| D12F | T2, T3 |
+| D13T | T1, T6, T7, T8 |
 | D13F | T4, T5 |
-| D14T | T1, T2, T3 |
-| D14F | T8 |
-| D15T | T1, T3 |
-| D15F | T2 |
-| D16T | T3 |
-| D16F | T1 |
-| D17T | T5 |
-| D17F | T4 |
+| D14T | T6, T7, T8 |
+| D14F | T1 |
+| D15T | T6, T7 |
+| D15F | T8 |
+| D16T | T7 |
+| D16F | T6 |
+| D17T | T4 |
+| D17F | T5 |
 
-**34 de 34 ramos cobertos (100% de Cobertura de Decisão).**
+Portanto:
 
----
+```text
+34 / 34 ramos cobertos
+Cobertura de decisão = 100%
+```
 
-## Etapa 4: Justificativa de minimalidade (limite inferior = 8)
+## Etapa 4 — Justificativa de minimalidade
 
-Cada caso tem um item e uma chamada, então executa o corpo do laço uma única vez. Logo, cada caso percorre um único caminho, que toma exatamente um lado de D2.
+O conjunto de 8 casos não é apenas suficiente; com as restrições fornecidas, ele é mínimo.
 
-**1. Casos com D2T precisam ser pelo menos 3.** Depois de D2T, o caminho termina, de forma mutuamente exclusiva, em uma destas três opções:
-- (a) D3F
-- (b) D3T seguido de D4T
-- (c) D3T seguido de D4F
+### 1. Backstage exige pelo menos 3 casos
 
-Os ramos D3F, D4T e D4F são todos obrigatórios e cada um só aparece em uma dessas opções. Assim, nenhum caso cobre dois deles.
+Para alcançar D7, D8, D9 e D10, obrigatoriamente precisamos de Backstage.
 
-**2. Casos com D2F precisam ser pelo menos 5.** Depois de D2F, o caminho segue exatamente uma destas cinco opções mutuamente exclusivas:
-- (a) D5F
-- (b) D5T, D6F
-- (c) D5T, D6T, D7F
-- (d) D5T, D6T, D7T, D8T
-- (e) D5T, D6T, D7T, D8F
+O ramo:
 
-Os ramos D5F, D6F, D7F, D8T e D8F são todos obrigatórios. Cada um pertence a uma única opção, e um caminho não pode tomar dois lados da mesma decisão, porque D1 só é True uma vez por caso.
+```text
+D7F
+```
 
-**3. Total.** D2T e D2F não coexistem num mesmo caso, então o mínimo é 3 + 5 = 8. O conjunto T1 a T8 atinge esse limite, logo é mínimo.
+exige:
 
-Os demais ramos (D9 a D17 e D11F) foram encaixados nesses 8 caminhos sem precisar de caso extra:
-- D16F e D11F no T1 (Sulfuras)
-- D15F no T2
-- D16T no T3
-- D17F no T4
-- D17T no T5
-- D12F e D9F no T6
-- D10T no T7
-- D14F e D10F no T8
+```text
+SellIn >= 11
+```
 
----
+Já D10 só é alcançado quando:
 
-## Etapa 5: Código Go
+```text
+D9T => SellIn < 6
+```
+
+Logo, o caso usado para D7F não pode cobrir D10.
+
+Além disso, precisamos de ambos:
+
+```text
+D10T
+D10F
+```
+
+Uma única execução que chega a D10 só pode tomar um desses dois ramos.
+
+Portanto:
+
+```text
+1 caso para D7F
++
+1 caso para D10T
++
+1 caso para D10F
+=
+mínimo de 3 Backstage
+```
+
+São T1, T2 e T3.
+
+### 2. Aged Brie exige pelo menos 2 casos
+
+D17 somente é alcançada por "Aged Brie".
+
+Precisamos de:
+
+```text
+D17T
+D17F
+```
+
+Como uma execução só pode escolher um dos lados da decisão:
+
+```text
+mínimo de 2 Aged Brie
+```
+
+São T4 e T5.
+
+Até aqui:
+
+```text
+3 + 2 = 5 casos
+```
+
+### 3. D16F exige um Sulfuras específico
+
+Para obter:
+
+```text
+D16F
+```
+
+é necessário que D16 seja avaliada e:
+
+```text
+Name != "Sulfuras, Hand of Ragnaros"
+```
+
+seja falso.
+
+Logo obrigatoriamente:
+
+```text
+Name = Sulfuras
+```
+
+Além disso, para chegar a D16:
+
+```text
+D12T
+D13T
+D14T
+D15T
+```
+
+Portanto precisamos de Sulfuras com:
+
+```text
+SellIn < 0
+Quality > 0
+```
+
+Esse caso não pode ser nenhum dos cinco anteriores.
+
+T6 é obrigatório estruturalmente.
+
+Total mínimo:
+
+```text
+6 casos
+```
+
+### 4. D16T exige um item comum
+
+Para D16T, o nome deve satisfazer:
+
+```text
+Name != Sulfuras
+```
+
+Mas para chegar a D16 também já precisamos de:
+
+```text
+D13T => não Aged Brie
+D14T => não Backstage
+```
+
+Logo D16T exige necessariamente um item que não seja:
+
+```text
+Aged Brie
+Backstage
+Sulfuras
+```
+
+ou seja, um item comum.
+
+Para ele alcançar D15/D16 depois da primeira redução:
+
+```text
+SellIn <= 0
+Quality > 1
+```
+
+Assim precisamos de pelo menos um caso adicional, T7.
+
+Total mínimo:
+
+```text
+7 casos
+```
+
+### 5. D3F não pode ser coberto por T7 nem pelo Sulfuras de D16F
+
+Ainda falta:
+
+```text
+D3F
+```
+
+D3F exige:
+
+```text
+Quality <= 0
+```
+
+O caso comum usado para D16T, porém, exige:
+
+```text
+Quality > 1
+```
+
+Logo o mesmo item não pode satisfazer os dois.
+
+Também não pode ser o Sulfuras usado para D16F, pois esse obrigatoriamente exige:
+
+```text
+Quality > 0
+```
+
+E não pode ser nenhum Aged Brie ou Backstage, porque ambos seguem por D2F, não chegando a D3.
+
+Consequentemente existe a necessidade de um oitavo caso, T8.
+
+Temos então o limite inferior:
+
+```text
+3 Backstage
++ 2 Aged Brie
++ 1 Sulfuras
++ 1 item comum para D16T
++ 1 item comum/Sulfuras com Q<=0 para D3F
+= 8 casos
+```
+
+Como a suíte apresentada usa exatamente 8 casos e cobre todos os 34 ramos:
+
+$$
+\boxed{\text{mínimo = 8 casos de teste}}
+$$
+
+## Etapa 5 — Código Go
+
+Arquivo completo estruturado_test.go:
 
 ```go
 package estruturado_test
@@ -342,105 +663,130 @@ import (
 	"github.com/emilybache/gildedrose-refactoring-kata/gildedrose"
 )
 
-const (
-	agedBrie  = "Aged Brie"
-	backstage = "Backstage passes to a TAFKAL80ETC concert"
-	sulfuras  = "Sulfuras, Hand of Ragnaros"
-	comum     = "Item comum"
-)
-
-// TestUpdateQuality_CoberturaDeDecisao percorre os 34 ramos (D1T..D17F) do
-// grafo de fluxo de controle de UpdateQuality. Cada linha da tabela é UM item
-// em UMA chamada. Os valores esperados caracterizam o comportamento atual do
-// código legado (não corrigem nem pressupõem regras de negócio).
-func TestUpdateQuality_CoberturaDeDecisao(t *testing.T) {
-	casos := []struct {
-		id              string
-		ramos           string
-		name            string
-		sellIn          int
-		quality         int
-		esperadoSellIn  int
-		esperadoQuality int
+func TestUpdateQualityCoberturaEstrutural(t *testing.T) {
+	tests := []struct {
+		id          string
+		name        string
+		sellIn      int
+		quality     int
+		wantSellIn  int
+		wantQuality int
+		ramos       string
 	}{
 		{
-			id:     "T1",
-			ramos:  "D1T D1F D2T D3T D4F D11F D12T D13T D14T D15T D16F",
-			name:   sulfuras, sellIn: -1, quality: 80,
-			esperadoSellIn: -1, esperadoQuality: 80,
+			id:          "T1",
+			name:        "Backstage passes to a TAFKAL80ETC concert",
+			sellIn:      0,
+			quality:     49,
+			wantSellIn:  -1,
+			wantQuality: 0,
+			ramos:       "D1T, D2F, D5T, D6T, D7T, D8F, D9T, D10F, D11T, D12T, D13T, D14F, D1F",
 		},
 		{
-			id:     "T2",
-			ramos:  "D1T D1F D2T D3F D11T D12T D13T D14T D15F",
-			name:   comum, sellIn: 0, quality: 0,
-			esperadoSellIn: -1, esperadoQuality: 0,
+			id:          "T2",
+			name:        "Backstage passes to a TAFKAL80ETC concert",
+			sellIn:      5,
+			quality:     10,
+			wantSellIn:  4,
+			wantQuality: 13,
+			ramos:       "D1T, D2F, D5T, D6T, D7T, D8T, D9T, D10T, D11T, D12F, D1F",
 		},
 		{
-			id:     "T3",
-			ramos:  "D1T D1F D2T D3T D4T D11T D12T D13T D14T D15T D16T",
-			name:   comum, sellIn: 0, quality: 10,
-			esperadoSellIn: -1, esperadoQuality: 8,
+			id:          "T3",
+			name:        "Backstage passes to a TAFKAL80ETC concert",
+			sellIn:      11,
+			quality:     10,
+			wantSellIn:  10,
+			wantQuality: 11,
+			ramos:       "D1T, D2F, D5T, D6T, D7F, D9F, D11T, D12F, D1F",
 		},
 		{
-			id:     "T4",
-			ramos:  "D1T D1F D2F D5F D11T D12T D13F D17F",
-			name:   agedBrie, sellIn: 0, quality: 50,
-			esperadoSellIn: -1, esperadoQuality: 50,
+			id:          "T4",
+			name:        "Aged Brie",
+			sellIn:      0,
+			quality:     0,
+			wantSellIn:  -1,
+			wantQuality: 2,
+			ramos:       "D1T, D2F, D5T, D6F, D11T, D12T, D13F, D17T, D1F",
 		},
 		{
-			id:     "T5",
-			ramos:  "D1T D1F D2F D5T D6F D11T D12T D13F D17T",
-			name:   agedBrie, sellIn: 0, quality: 10,
-			esperadoSellIn: -1, esperadoQuality: 12,
+			id:          "T5",
+			name:        "Aged Brie",
+			sellIn:      0,
+			quality:     50,
+			wantSellIn:  -1,
+			wantQuality: 50,
+			ramos:       "D1T, D2F, D5F, D11T, D12T, D13F, D17F, D1F",
 		},
 		{
-			id:     "T6",
-			ramos:  "D1T D1F D2F D5T D6T D7F D9F D11T D12F",
-			name:   backstage, sellIn: 11, quality: 10,
-			esperadoSellIn: 10, esperadoQuality: 11,
+			id:          "T6",
+			name:        "Sulfuras, Hand of Ragnaros",
+			sellIn:      -1,
+			quality:     10,
+			wantSellIn:  -1,
+			wantQuality: 10,
+			ramos:       "D1T, D2T, D3T, D4F, D11F, D12T, D13T, D14T, D15T, D16F, D1F",
 		},
 		{
-			id:     "T7",
-			ramos:  "D1T D1F D2F D5T D6T D7T D8T D9T D10T D11T D12F",
-			name:   backstage, sellIn: 5, quality: 10,
-			esperadoSellIn: 4, esperadoQuality: 13,
+			id:          "T7",
+			name:        "Normal Item",
+			sellIn:      0,
+			quality:     2,
+			wantSellIn:  -1,
+			wantQuality: 0,
+			ramos:       "D1T, D2T, D3T, D4T, D11T, D12T, D13T, D14T, D15T, D16T, D1F",
 		},
 		{
-			id:     "T8",
-			ramos:  "D1T D1F D2F D5T D6T D7T D8F D9T D10F D11T D12T D13T D14F",
-			name:   backstage, sellIn: 0, quality: 49,
-			esperadoSellIn: -1, esperadoQuality: 0,
+			id:          "T8",
+			name:        "Normal Item",
+			sellIn:      0,
+			quality:     0,
+			wantSellIn:  -1,
+			wantQuality: 0,
+			ramos:       "D1T, D2T, D3F, D11T, D12T, D13T, D14T, D15F, D1F",
 		},
 	}
 
-	for _, c := range casos {
-		c := c
-		t.Run(c.id, func(t *testing.T) {
-			item := &gildedrose.Item{Name: c.name, SellIn: c.sellIn, Quality: c.quality}
+	for _, tc := range tests {
+		t.Run(tc.id, func(t *testing.T) {
+			item := &gildedrose.Item{
+				Name:    tc.name,
+				SellIn:  tc.sellIn,
+				Quality: tc.quality,
+			}
 
 			gildedrose.UpdateQuality([]*gildedrose.Item{item})
 
-			if item.SellIn != c.esperadoSellIn {
-				t.Errorf("%s [%s] entrada (%q, SellIn=%d, Quality=%d): SellIn = %d, esperado %d",
-					c.id, c.ramos, c.name, c.sellIn, c.quality, item.SellIn, c.esperadoSellIn)
+			if item.SellIn != tc.wantSellIn {
+				t.Errorf(
+					"SellIn incorreto: entrada=(Name=%q, SellIn=%d, Quality=%d), obtido=%d, esperado=%d, ramos=%s",
+					tc.name,
+					tc.sellIn,
+					tc.quality,
+					item.SellIn,
+					tc.wantSellIn,
+					tc.ramos,
+				)
 			}
-			if item.Quality != c.esperadoQuality {
-				t.Errorf("%s [%s] entrada (%q, SellIn=%d, Quality=%d): Quality = %d, esperado %d",
-					c.id, c.ramos, c.name, c.sellIn, c.quality, item.Quality, c.esperadoQuality)
+
+			if item.Quality != tc.wantQuality {
+				t.Errorf(
+					"Quality incorreto: entrada=(Name=%q, SellIn=%d, Quality=%d), obtido=%d, esperado=%d, ramos=%s",
+					tc.name,
+					tc.sellIn,
+					tc.quality,
+					item.Quality,
+					tc.wantQuality,
+					tc.ramos,
+				)
 			}
 		})
 	}
 }
 ```
 
----
-
 ## Observações
 
-1. **Condições da D2:** a suíte também exercita as combinações relevantes das duas condições atômicas da linha 11, embora o critério trate D2 como uma decisão única:
-   - Item comum (T2, T3): (True, True)
-   - Aged Brie (T4, T5): (False, com curto-circuito)
-   - Backstage (T6 a T8): (True, False)
-2. **Contagem da D1:** em cada caso, D1 é avaliada duas vezes, primeiro True e depois False. Uma lista vazia cobriria só D1F e não é necessária, porque todos os casos já cobrem D1F.
-3. **Entradas fora de faixa:** o código não valida entradas. Por exemplo, T1 usa Quality = 80 para Sulfuras e o código apenas preserva esse valor. Valores negativos ou acima de 50 passam pelas guardas conforme as restrições da Etapa 1. Nenhum teste foi gerado para regras de faixa, porque não existe ramo que as imponha.
-4. **Limite da cobertura de decisão:** 100% de decisão não garante cobertura de caminhos nem de valores-limite. Exemplos: Backstage com SellIn = 10 ou 6, ou Q = 48 levando a D10F, são limites de interesse que o critério pedido não exige.
+Todos os 17 pontos de decisão possuem os dois resultados exercitados, totalizando os 34 ramos do modelo fornecido. Não há ramo inalcançável nesse CFG.
+
+A suíte é de caracterização: os valores esperados representam exatamente as mutações produzidas pelo código legado apresentado, inclusive comportamentos peculiares como Backstage com Quality=49 chegar a 50 antes de D8/D10 e depois ser zerado quando expirado.

@@ -137,7 +137,7 @@ qualquer asserção ou valor esperado gerado pela IA:
    exemplo do prompt (`gr := GildedRose{Items: items}; gr.UpdateQuality()`) em
    vez da assinatura real do código fornecido (`UpdateQuality(items []*Item)`).
    As chamadas foram trocadas por `gildedrose.UpdateQuality(items)`. Depois
-   dessas duas correções, os 20 testes do Few-shot passaram sem qualquer outra
+   dessas duas correções, os 24 testes do Few-shot passaram sem qualquer outra
    mudança — a lógica dos testes em si já estava correta.
 2. **Colisão de nomes entre técnicas.** Few-shot e Spec-driven geraram funções
    de teste com nomes idênticos (`TestQualityDecreasesByOneForNormalItemBeforeSellDate`

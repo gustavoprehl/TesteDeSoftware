@@ -34,29 +34,41 @@ A análise manual concluiu que todos os 34 ramos são alcançáveis e que o meno
 
 Na Iteração 1, foram avaliadas cinco técnicas de prompt:
 
-| Técnica | Nº de testes / formato | Resultado original |
+| Técnica | Nº de testes | Resultado original |
 |---|---:|---|
 | Direto | 13 testes | Compilou e passou |
-| Chain-of-Thought | 6 funções + subtestes | Compilou e passou |
-| Persona Pattern | 8 funções + subtestes | Compilou e passou |
+| Chain-of-Thought | 27 testes | Compilou e passou |
+| Persona Pattern | 36 testes | Compilou e passou |
 | Spec-driven | 23 testes | Compilou e passou, mas com afirmação incorreta de falha esperada |
 | Few-shot | 24 testes | Não compilou inicialmente; passou após correção estrutural |
 
-O resultado agregado era forte sob a métrica tradicional: **131 testes executados, 0 falhas e 100% de cobertura de statements**. Porém, essa métrica não mostra se cada decisão foi exercitada nos dois sentidos.
+Cada teste é um cenário executável. Chain-of-Thought e Persona organizaram seus testes dentro de funções agrupadoras (`t.Run`); contamos os testes, não as funções.
+
+O resultado agregado era forte sob a métrica tradicional: **123 testes, 0 falhas e 100% de cobertura de statements**. O runner reporta 131 porque também conta as 8 funções que apenas agrupam testes (4 do Chain-of-Thought e 4 da Persona). Porém, essa métrica não mostra se cada decisão foi exercitada nos dois sentidos.
 
 ### Medição posterior por Cobertura de Decisão
 
-| Suíte | Casos | Cobertura de Decisão | Ramos não cobertos |
+| Suíte | Testes | Cobertura de Decisão | Ramos não cobertos |
 |---|---:|---:|---|
 | Direto | 13 | 31/34 = **91,2%** | D15F, D16F, D17F |
-| Chain-of-Thought | 6 + subtestes | 32/34 = **94,1%** | D15F, D17F |
-| Persona Pattern | 8 + subtestes | 34/34 = **100%** | — |
+| Chain-of-Thought | 27 | 32/34 = **94,1%** | D15F, D17F |
+| Persona Pattern | 36 | 34/34 = **100%** | — |
 | Spec-driven | 23 | 34/34 = **100%** | — |
 | Few-shot | 24 | 34/34 = **100%** | — |
 
 ### Leitura da Iteração 1
 
-O principal achado é que o ranking qualitativo inicial não coincide totalmente com a cobertura estrutural real. Persona, Spec-driven e Few-shot atingiram 100% de decisão, enquanto Direto e Chain-of-Thought deixaram ramos sem cobertura.
+O principal achado é que o ranking qualitativo inicial (Persona > Chain-of-Thought > Spec-driven > Direto > Few-shot) não coincide com a cobertura estrutural real. Persona, Spec-driven e Few-shot atingiram 100% de decisão, enquanto Direto e Chain-of-Thought deixaram ramos sem cobertura.
+
+Refazendo o ranking com a Cobertura de Decisão como primeiro critério e, no empate, compilar sem correção e não alucinar:
+
+| Posição | Técnica | Decisão | Desempate |
+|---|---|---:|---|
+| 1º | Persona Pattern | 100% | Compilou e não alucinou; único com slice nil e vazio |
+| 2º | Spec-driven | 100% | Compilou, mas afirmou que 3 testes falhariam (eles passam) |
+| 3º | Few-shot | 100% | Não compilou: struct inventada e `*testing.t` |
+| 4º | Chain-of-Thought | 94,1% | Faltam D15F e D17F |
+| 5º | Direto | 91,2% | Faltam D15F, D16F e D17F |
 
 Mesmo assim, todas as suítes compartilham a mesma limitação: nenhuma testa `Conjured`. Esse ponto não aparece na cobertura estrutural porque o código não tem um ramo específico para esse item.
 
@@ -92,7 +104,7 @@ A análise manual também deixou claro o limite da métrica: **100% de Cobertura
 
 ## 5. Iteração 2 — Prompt estrutural
 
-A Iteração 2 usou um prompt novo, com papel de Engenheiro de QA Sênior e foco explícito em teste estrutural. O prompt forneceu:
+A Iteração 2 usou a mesma LLM da Iteração 1 (ChatGPT) e um prompt novo, com papel de Engenheiro de QA Sênior e foco explícito em teste estrutural. O prompt forneceu:
 
 - o código sob teste;
 - o modelo estrutural D1–D17;
@@ -112,14 +124,19 @@ A IA não recebeu os casos manuais M1–M8 nem os valores de fronteira prontos. 
 | Testes passaram | 8/8 |
 | Cobertura de statements | 100% |
 | Cobertura de Decisão | 34/34 = **100%** |
-| Casos gerados | 8 |
+| Testes gerados | 8 |
 | Alucinações encontradas | Não |
 
-A suíte estruturada chegou ao mesmo número mínimo da análise manual: **8 casos**. A matriz de rastreabilidade gerada pela IA também foi conferida e bateu com a medição.
+A suíte estruturada chegou ao mesmo número mínimo da análise manual: **8 testes**. A coluna `ramos` de cada teste foi conferida isoladamente com o medidor (8/8 idênticas) e as 34 condições de alcance escritas pela IA foram comparadas com o código em 7.644 entradas, sem divergência.
 
-### Limitação metodológica
+Como a LLM foi a mesma nas duas iterações, a diferença observada vem do prompt.
 
-Há uma limitação importante: a Iteração 1 foi feita com ChatGPT, enquanto a execução registrada da Iteração 2 foi feita com Claude. Assim, a comparação muda duas variáveis ao mesmo tempo: o **prompt** e o **modelo**. A conclusão mais segura é que o pacote “prompt estrutural + modelo usado” melhorou o resultado. Para isolar apenas o efeito do prompt, seria necessário repetir a Iteração 2 no mesmo modelo da Iteração 1.
+### Onde a IA ainda falhou
+
+- Percorreu 5 dos 18 caminhos independentes: 100% de decisão não é 100% de caminhos.
+- Não testou as fronteiras SellIn 10 e 6 de Backstage, porque o critério não exigia.
+- Usou Sulfuras com Quality 10, estado que a especificação não admite (fixa em 80): o mesmo padrão do Chain-of-Thought na Iteração 1.
+- Não fala de `Conjured`, que não tem ramo no código.
 
 ---
 
@@ -131,7 +148,7 @@ Há uma limitação importante: a Iteração 1 foi feita com ChatGPT, enquanto a
 | Objetivo explícito | Gerar testes unitários | Mapear e cobrir ramos | Gerar suíte mínima com 100% de decisão |
 | Cobertura de statements | 100% em todas as suítes | Considerada insuficiente | 100% |
 | Cobertura de Decisão | 91,2% a 100% | 100% mapeada | 100% medida |
-| Nº de casos | 13, 6+, 8+, 23, 24 | 8 necessários | 8 gerados |
+| Nº de testes | 13, 27, 36, 23, 24 | 8 necessários | 8 gerados |
 | Rastreabilidade | Parcial ou ausente | Completa, ramo a ramo | Completa e verificável |
 | Alucinação | Encontrada em Few-shot e Spec-driven | Não aplicável | Não encontrada |
 | Capacidade de achar `Conjured` | Não achou | Achou por auditoria de requisito | Não achou, pois não há ramo no código |

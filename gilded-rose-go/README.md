@@ -22,9 +22,10 @@ go tool cover -html=coverage.out
 
 ## Testes gerados por IA (prompt_tests/)
 
-Além do kata original em [gildedrose/](gildedrose/), este diretório contém as 5 suítes de
-testes geradas pelo ChatGPT (uma por técnica de prompt), documentadas em
-[`../docs/Registro_Prompts.pdf`](../docs/Registro_Prompts.pdf):
+Além do kata original em [gildedrose/](gildedrose/), este diretório contém as suítes de testes
+geradas pelo ChatGPT, a mesma LLM nas duas iterações: uma por técnica de prompt na Iteração 1
+(documentadas em [`../docs/Registro_Prompts.pdf`](../docs/Registro_Prompts.pdf)) e a do prompt
+estruturado na Iteração 2:
 
 | Pacote | Técnica |
 |---|---|
@@ -52,7 +53,7 @@ go test ./prompt_tests/... -coverpkg=./gildedrose/... -coverprofile=coverage.out
 go tool cover -func=coverage.out
 ```
 
-Resultado atual: as 5 suítes compilam e passam 100%, com 100% de cobertura de statement do
+Resultado atual: as 6 suítes compilam e passam 100%, com 100% de cobertura de statement do
 pacote `gildedrose`. Ver as seções "Intervenção manual na integração" e "Cobertura de statement
 como falso positivo" em [`AUDITORIA-TESTES-IA.md`](AUDITORIA-TESTES-IA.md) para as correções
 manuais que foram necessárias (responsabilidade da Dupla 2) e para uma observação sobre o que
